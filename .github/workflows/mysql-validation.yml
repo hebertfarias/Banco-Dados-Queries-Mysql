@@ -1,0 +1,39 @@
+name: SQL MySQL 8 Validation
+
+on:
+  push:
+    branches:
+      - main
+      - chore/portfolio-quality-improvements
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mysql-validation:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install MySQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-mysql-client
+      - name: Create schema and validate quarterly query
+        run: |
+          mysql -h 127.0.0.1 -uroot -proot < queries/criar_schema.sql
+          mysql -h 127.0.0.1 -uroot -proot db_hebert < queries/despesas_ultimo_trimestre.sql
